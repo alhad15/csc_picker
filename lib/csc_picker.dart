@@ -589,6 +589,7 @@ class CSCPickerState extends State<CSCPicker> {
   List<String?> _states = [];
   List<CscCountry> _countryFilter = [];
 
+  String _widgetCurrentCountry='';
   String _selectedCity = 'City';
   String? _selectedCountry;
   String _selectedState = 'State';
@@ -601,30 +602,46 @@ class CSCPickerState extends State<CSCPicker> {
     if (widget.countryFilter != null) {
       _countryFilter = widget.countryFilter!;
     }
-    getCountries();
     _selectedCity = widget.cityDropdownLabel;
     _selectedState = widget.stateDropdownLabel;
   }
 
   Future<void> setDefaults() async {
     if (widget.currentCountry != null) {
-      setState(() => _selectedCountry = widget.currentCountry);
+      _widgetCurrentCountry = widget.currentCountry!;
+    }
+    await getCountries();
+    if (widget.currentCountry != null) {
+      //print(_selectedCountry);
+      setState(() => _selectedCountry = _widgetCurrentCountry);
+      //print('await getStates()');
+      //print(_selectedCountry);
       await getStates();
+      //print('await getStates() end');
     }
 
     if (widget.currentState != null) {
+
+      //print('await getCities()');
+      //print(_selectedState);
       setState(() => _selectedState = widget.currentState!);
+      //print(_selectedState);
       await getCities();
+      //print('await getCities() end');
     }
 
     if (widget.currentCity != null) {
+      //print('widget.currentCity');
+      //print(_selectedCity);
       setState(() => _selectedCity = widget.currentCity!);
+      //print(_selectedCity);
+      //print('widget.currentCity end');
     }
   }
 
   void _setDefaultCountry() {
     if (widget.defaultCountry != null) {
-      print(_country[Countries[widget.defaultCountry]!]);
+      //print(_country[Countries[widget.defaultCountry]!]);
       _onSelectedCountry(_country[Countries[widget.defaultCountry]!]!);
     }
   }
@@ -640,17 +657,34 @@ class CSCPickerState extends State<CSCPicker> {
   Future<List<String?>> getCountries() async {
     _country.clear();
     var countries = await getResponse() as List;
+    //print('countries');
+    //print(countries);
     if (_countryFilter.isNotEmpty) {
       _countryFilter.forEach((element) {
         var result = countries[Countries[element]!];
-        if(result!=null) addCountryToList(result);
+        if(result!=null)
+          {
+            addCountryToList(result);
+            if (widget.currentCountry != null && _widgetCurrentCountry?.indexOf("    ")==-1
+                && _widgetCurrentCountry==result['name'])
+            {
+              _widgetCurrentCountry=result['emoji'] + "    " + result['name'];
+            }
+          }
       });
     } else {
       countries.forEach((data) {
         addCountryToList(data);
+        if (widget.currentCountry != null && _widgetCurrentCountry?.indexOf("    ")==-1
+            && _widgetCurrentCountry==data['name'])
+        {
+          _widgetCurrentCountry=data['emoji'] + "    " + data['name'];
+        }
       });
     }
     _setDefaultCountry();
+    //print('_country');
+    //print(_country);
     return _country;
   }
 
@@ -674,6 +708,7 @@ class CSCPickerState extends State<CSCPicker> {
   Future<List<String?>> getStates() async {
     _states.clear();
     //print(_selectedCountry);
+    //print(_country);
     var response = await getResponse();
     var takeState = widget.flagState == CountryFlag.ENABLE ||
             widget.flagState == CountryFlag.SHOW_IN_DROP_DOWN_ONLY
@@ -689,8 +724,13 @@ class CSCPickerState extends State<CSCPicker> {
             .map((item) => item.state)
             .toList();
     var states = takeState as List;
+    //print('states');
+    //print(states);
     states.forEach((f) {
+      //print('!mounted');
+      //print(!mounted);
       if (!mounted) return;
+      //print('!mounted end');
       setState(() {
         var name = f.map((item) => item.name).toList();
         for (var stateName in name) {
@@ -898,7 +938,7 @@ class CSCPickerState extends State<CSCPicker> {
       //selected: _selectedCountry != null ? _selectedCountry : "Country",
       //onChanged: (value) => _onSelectedCountry(value),
       onChanged: (value) {
-        print("countryChanged $value $_selectedCountry");
+        //print("countryChanged $value $_selectedCountry");
         if (value != null) {
           _onSelectedCountry(value);
         }
